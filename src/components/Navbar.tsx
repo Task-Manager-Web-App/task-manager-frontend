@@ -52,6 +52,13 @@ export default function Navbar() {
           >
             📝 Tasks
           </Link>
+
+          <Link 
+            to="/sample" 
+            className={`${navLinkClass('/sample')} bg-gray-600 text-white hover:bg-gray-700`}
+          >
+            🧪 Sample
+          </Link>
         </div>
       </div>
     </nav>

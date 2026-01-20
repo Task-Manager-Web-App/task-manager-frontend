@@ -6,6 +6,7 @@ import RegisterPage from './pages/login-pages/RegisterPage';
 import ProfilePage from './pages/profile-pages/ProfilePage';
 import TasksPage from './pages/tasks-pages/TasksPage';
 import AddTaskPage from './pages/tasks-pages/AddTaskPage';
+import SamplePage from './pages/samplePage';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/add-task" element={<AddTaskPage />} />
+          <Route path="/sample" element={<SamplePage />} />
         </Routes>
       </div>
     </div>
