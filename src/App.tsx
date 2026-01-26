@@ -12,7 +12,7 @@ function App() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      <div className="max-w-6xl mx-auto p-4">
+      <div className="max-w-6xl mx-auto p-0">
         <Routes>
           <Route path="/" element={<TasksPage />} />
           <Route path="/login" element={<LoginPage />} />
