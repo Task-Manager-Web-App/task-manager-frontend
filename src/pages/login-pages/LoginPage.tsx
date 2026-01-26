@@ -12,7 +12,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md bg-white p-8">
+      <div className="w-full max-w-md bg-white p-0">
         <h1 className="text-4xl font-bold text-center">Welcome Back</h1>
         <p className="text-center text-gray-600 mb-6">Please enter your credentials to login</p>
 
