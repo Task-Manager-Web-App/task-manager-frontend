@@ -1,168 +1,124 @@
-// JavaScript (React)
-import React, { useState } from 'react';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  MenuItem,
-  Paper
-} from '@mui/material';
+import { useState } from "react";
 
-const priorities = [
-  { value: 'Low', label: 'Low' },
-  { value: 'Medium', label: 'Medium' },
-  { value: 'High', label: 'High' },
-];
+export default function AddTaskPage() {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export default function AddTask({ onAddTask }) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [priority, setPriority] = useState('Medium');
+  const handleCancel = () => {
+    setTitle("");
+    setDescription("");
+    setError(null);
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!title) return;
-    onAddTask({ title, description, dueDate, priority });
-    setTitle('');
-    setDescription('');
-    setDueDate('');
-    setPriority('Medium');
+  const handleSave = async () => {
+    setError(null);
+
+    if (!title.trim()) {
+      setError("Task title is required.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await fetch("http://localhost:3000/add-task", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim(),
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data?.message || "Failed to save task.");
+        return;
+      }
+
+      alert("Task saved! Check Supabase → Table Editor → tasks");
+      setTitle("");
+      setDescription("");
+    } catch (e: any) {
+      setError(e?.message || "Server error. Is backend running?");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%)',
-      }}
-    >
-      <Paper
-        elevation={6}
-        sx={{
-          p: 5,
-          maxWidth: 480,
-          width: '100%',
-          borderRadius: 4,
-          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-          backdropFilter: 'blur(4px)',
-        }}
-      >
-        <Typography
-          variant="h4"
-          sx={{
-            mb: 3,
-            fontWeight: 700,
-            letterSpacing: 1,
-            color: '#2d3a4b',
-            fontFamily: 'Segoe UI, sans-serif',
-            textAlign: 'center',
-          }}
-        >
-          Add New Task
-        </Typography>
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <TextField
-            label="Task Title"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            required
-            sx={{
-              '& .MuiInputBase-root': {
-                borderRadius: 2,
-                background: '#f8fafc',
-              },
-              '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#6a82fb',
-              },
-            }}
-          />
-          <TextField
-            label="Description"
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            multiline
-            rows={3}
-            sx={{
-              '& .MuiInputBase-root': {
-                borderRadius: 2,
-                background: '#f8fafc',
-              },
-              '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#6a82fb',
-              },
-            }}
-          />
-          <TextField
-            label="Due Date"
-            type="date"
-            value={dueDate}
-            onChange={e => setDueDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={{
-              '& .MuiInputBase-root': {
-                borderRadius: 2,
-                background: '#f8fafc',
-              },
-              '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#6a82fb',
-              },
-            }}
-          />
-          <TextField
-            select
-            label="Priority"
-            value={priority}
-            onChange={e => setPriority(e.target.value)}
-            sx={{
-              '& .MuiInputBase-root': {
-                borderRadius: 2,
-                background: '#f8fafc',
-              },
-              '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#6a82fb',
-              },
-            }}
-          >
-            {priorities.map(option => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
-          <Button
-            type="submit"
-            variant="contained"
-            sx={{
-              mt: 2,
-              py: 1.5,
-              fontWeight: 600,
-              fontSize: '1rem',
-              borderRadius: 2,
-              background: 'linear-gradient(90deg, #6a82fb 0%, #fc5c7d 100%)',
-              boxShadow: '0 4px 14px 0 rgba(252, 92, 125, 0.15)',
-              transition: 'background 0.3s',
-              '&:hover': {
-                background: 'linear-gradient(90deg, #fc5c7d 0%, #6a82fb 100%)',
-              },
-            }}
-          >
-            Add Task
-          </Button>
-        </Box>
-      </Paper>
-    </Box>
+    <div className="min-h-screen bg-gray-100 flex justify-center pt-16">
+      <div className="w-full max-w-3xl px-4">
+        {/* Heading */}
+        <h1 className="text-4xl font-bold text-gray-800">Add Task</h1>
+        <p className="mt-2 text-gray-500">
+          Create a new item for your to-do list.
+        </p>
+
+        {/* Card */}
+        <div className="mt-6 rounded-lg border bg-white">
+          {/* Task Title section */}
+          <div className="p-6 border-b">
+            <div className="flex items-center gap-2 text-gray-800 font-semibold">
+              <span className="text-emerald-600">✎</span>
+              <span>Task Title</span>
+            </div>
+
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter task title (e.g., Study for History Midterm)..."
+              className="mt-3 w-full rounded-md border px-4 py-3 text-sm focus:outline-none focus:border-emerald-600"
+              disabled={loading}
+            />
+          </div>
+
+          {/* Description section */}
+          <div className="p-6 border-b">
+            <div className="flex items-center gap-2 text-gray-800 font-semibold">
+              <span className="text-emerald-600">≡</span>
+              <span>Description</span>
+            </div>
+
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Provide more details about this task. Include links, requirements, or sub-tasks..."
+              className="mt-3 w-full min-h-[180px] resize-none rounded-md border px-4 py-3 text-sm focus:outline-none focus:border-emerald-600"
+              disabled={loading}
+            />
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="px-6 pt-4 text-sm text-red-600">{error}</div>
+          )}
+
+          {/* Footer buttons */}
+          <div className="p-6 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="rounded-md bg-gray-100 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-60"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSave}
+              className="rounded-md bg-emerald-600 px-8 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+              disabled={loading}
+            >
+              {loading ? "Saving..." : "Save Task"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
