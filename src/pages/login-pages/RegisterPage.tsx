@@ -65,13 +65,8 @@ export default function RegisterPage() {
           />
 
           <select
-<<<<<<< HEAD
             //value={role}
             //onChange={(e) => setRole(e.target.value)}
-=======
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
->>>>>>> origin/master
             className="w-full py-3 border border-gray-300 rounded-lg"
             required
           >
