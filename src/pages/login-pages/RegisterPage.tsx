@@ -5,12 +5,39 @@ export default function RegisterPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
+  //const [role, setRole] = useState("");
 
-  const handleSubmit = (e:React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log(email, password, role);
-  };
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+
+  try {
+    const response = await fetch("http://localhost:3000/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email,
+        password: password,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.message || "Registration failed");
+      return;
+    }
+
+    alert("Registration successful!");
+    console.log(data);
+
+  } catch (error) {
+    alert("Cannot connect to server");
+    console.error(error);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -38,8 +65,13 @@ export default function RegisterPage() {
           />
 
           <select
+<<<<<<< HEAD
+            //value={role}
+            //onChange={(e) => setRole(e.target.value)}
+=======
             value={role}
             onChange={(e) => setRole(e.target.value)}
+>>>>>>> origin/master
             className="w-full py-3 border border-gray-300 rounded-lg"
             required
           >
