@@ -1,14 +1,124 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function ProfilePage() {
   const [firstName, setFirstName] = useState("Jane");
   const [lastName, setLastName] = useState("Doe");
   const [role, setRole] = useState("User");
+  const [email, setEmail] = useState("jane.doe@example.com");
+
+  // keep a copy so Cancel can restore the last loaded state
+  const [initial, setInitial] = useState({
+    firstName: "Jane",
+    lastName: "Doe",
+    role: "User",
+    email: "jane.doe@example.com",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCancel = () => {
-    setFirstName("Jane");
-    setLastName("Doe");
-    setRole("User");
+    setFirstName(initial.firstName);
+    setLastName(initial.lastName);
+    setRole(initial.role);
+    setEmail(initial.email);
+    setError(null);
+  };
+
+  // ✅ load profile on page open
+  useEffect(() => {
+    const loadProfile = async () => {
+      setError(null);
+      const userId = localStorage.getItem("user_id");
+      if (!userId) {
+        setError("Please login first.");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const res = await fetch(`http://localhost:3000/profile/${userId}`);
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          setError(data?.message || "Failed to load profile.");
+          return;
+        }
+
+        // backend response: { first_name, last_name, role, email? }
+        const next = {
+          firstName: data.first_name || "",
+          lastName: data.last_name || "",
+          role: data.role || "User",
+          email: data.email || "", // if backend doesn’t send email, will remain ""
+        };
+
+        setFirstName(next.firstName);
+        setLastName(next.lastName);
+        setRole(next.role);
+        if (next.email) setEmail(next.email);
+
+        setInitial({
+          firstName: next.firstName,
+          lastName: next.lastName,
+          role: next.role,
+          email: next.email || email,
+        });
+      } catch (e: any) {
+        setError(e?.message || "Server error. Is backend running?");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ✅ save changes
+  const handleSave = async () => {
+    setError(null);
+    const userId = localStorage.getItem("user_id");
+    if (!userId) {
+      setError("Please login first.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const res = await fetch(`http://localhost:3000/profile/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          role: role,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data?.message || "Failed to update profile.");
+        return;
+      }
+
+      // update initial snapshot so Cancel goes back to latest saved version
+      setInitial({
+        firstName,
+        lastName,
+        role,
+        email,
+      });
+
+      alert("Profile updated!");
+    } catch (e: any) {
+      setError(e?.message || "Server error. Is backend running?");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -21,11 +131,14 @@ export default function ProfilePage() {
         <div className="mt-3 text-sm text-gray-600">
           <p>
             Current Email:{" "}
-            <span className="font-medium">jane.doe@example.com</span>
+            <span className="font-medium">{email || "-"}</span>
           </p>
           <p className="mt-1">
-            Current Role: <span className="font-medium">User</span>
+            Current Role: <span className="font-medium">{role}</span>
           </p>
+
+          {loading && <p className="mt-2 text-gray-500">Loading...</p>}
+          {error && <p className="mt-2 text-red-600">{error}</p>}
         </div>
 
         {/* Form Card */}
@@ -39,6 +152,7 @@ export default function ProfilePage() {
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               className="mt-2 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
+              disabled={loading || saving}
             />
           </div>
 
@@ -51,6 +165,7 @@ export default function ProfilePage() {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               className="mt-2 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
+              disabled={loading || saving}
             />
           </div>
 
@@ -63,6 +178,7 @@ export default function ProfilePage() {
               value={role}
               onChange={(e) => setRole(e.target.value)}
               className="mt-2 w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
+              disabled={loading || saving}
             >
               <option>User</option>
               <option>Admin</option>
@@ -74,17 +190,19 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={handleCancel}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-60"
+              disabled={loading || saving}
             >
               Cancel
             </button>
 
             <button
               type="button"
-              onClick={() => alert("Save clicked (UI only)")}
-              className="rounded-md bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+              onClick={handleSave}
+              className="rounded-md bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+              disabled={loading || saving}
             >
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </div>
