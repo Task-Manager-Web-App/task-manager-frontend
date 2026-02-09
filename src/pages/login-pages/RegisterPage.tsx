@@ -5,7 +5,7 @@ export default function RegisterPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  //const [role, setRole] = useState("");
+  const [role, setRole] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
@@ -19,6 +19,7 @@ export default function RegisterPage() {
       body: JSON.stringify({
         email: email,
         password: password,
+        role: role,
       }),
     });
 
@@ -65,8 +66,8 @@ export default function RegisterPage() {
           />
 
           <select
-            //value={role}
-            //onChange={(e) => setRole(e.target.value)}
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
             className="w-full py-3 border border-gray-300 rounded-lg"
             required
           >
