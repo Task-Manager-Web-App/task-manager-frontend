@@ -1,7 +1,10 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -10,6 +13,14 @@ export default function Navbar() {
     return isActive(path) 
       ? `${baseClass} shadow-lg` 
       : baseClass;
+  };
+
+  const handleLogout = async () => {
+    const confirm = window.confirm("Are you sure you want to logout?");
+    if (confirm) {
+      await signOut();
+      navigate("/login");
+    }
   };
 
   return (
@@ -23,42 +34,68 @@ export default function Navbar() {
           📋 Task Manager
         </Link>
         
+        {/* User email display */}
+        {user && (
+          <div className="text-white text-sm">
+            👤 {user.email}
+          </div>
+        )}
+        
         {/* Navigation Buttons */}
         <div className="flex gap-6 items-center">
-          <Link 
-            to="/login" 
-            className={`${navLinkClass('/login')} bg-blue-600 text-white hover:bg-blue-700`}
-          >
-            🔐 Login
-          </Link>
-          
-          <Link 
-            to="/profile" 
-            className={`${navLinkClass('/profile')} bg-emerald-600 text-white hover:bg-emerald-700`}
-          >
-            👤 Profile
-          </Link>
-          
-          <Link 
-            to="/add-task" 
-            className={`${navLinkClass('/add-task')} bg-purple-600 text-white hover:bg-purple-700`}
-          >
-            ➕ Add Task
-          </Link>
+          {!user ? (
+            <>
+              <Link 
+                to="/login" 
+                className={`${navLinkClass('/login')} bg-blue-600 text-white hover:bg-blue-700`}
+              >
+                🔐 Login
+              </Link>
+              <Link 
+                to="/register" 
+                className={`${navLinkClass('/register')} bg-green-600 text-white hover:bg-green-700`}
+              >
+                📝 Register
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link 
+                to="/profile" 
+                className={`${navLinkClass('/profile')} bg-emerald-600 text-white hover:bg-emerald-700`}
+              >
+                👤 Profile
+              </Link>
+              
+              <Link 
+                to="/add-task" 
+                className={`${navLinkClass('/add-task')} bg-purple-600 text-white hover:bg-purple-700`}
+              >
+                ➕ Add Task
+              </Link>
 
-          <Link 
-            to="/" 
-            className={`${navLinkClass('/')} bg-orange-600 text-white hover:bg-orange-700`}
-          >
-            📝 Tasks
-          </Link>
+              <Link 
+                to="/" 
+                className={`${navLinkClass('/')} bg-orange-600 text-white hover:bg-orange-700`}
+              >
+                📝 Tasks
+              </Link>
 
-          <Link 
-            to="/sample" 
-            className={`${navLinkClass('/sample')} bg-gray-600 text-white hover:bg-gray-700`}
-          >
-            🧪 Sample
-          </Link>
+              <Link 
+                to="/sample" 
+                className={`${navLinkClass('/sample')} bg-gray-600 text-white hover:bg-gray-700`}
+              >
+                🧪 Sample
+              </Link>
+
+              <button
+                onClick={handleLogout}
+                className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 active:scale-95 bg-red-600 text-white hover:bg-red-700"
+              >
+                🚪 Logout
+              </button>
+            </>
+          )}
         </div>
       </div>
     </nav>
