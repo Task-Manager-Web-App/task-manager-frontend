@@ -1,10 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function AddTaskPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleCancel = () => {
     setTitle("");
@@ -14,6 +18,11 @@ export default function AddTaskPage() {
 
   const handleSave = async () => {
     setError(null);
+
+    if (!user) {
+      setError("Please login first to add tasks.");
+      return;
+    }
 
     if (!title.trim()) {
       setError("Task title is required.");
@@ -29,6 +38,7 @@ export default function AddTaskPage() {
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
+          user_id: user.id, // Send user_id from session
         }),
       });
 
@@ -39,9 +49,11 @@ export default function AddTaskPage() {
         return;
       }
 
-      alert("Task saved! Check Supabase → Table Editor → tasks");
+      alert("Task saved successfully!");
       setTitle("");
       setDescription("");
+      // Navigate to tasks page after saving
+      navigate("/");
     } catch (e: any) {
       setError(e?.message || "Server error. Is backend running?");
     } finally {
