@@ -1,45 +1,45 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../../../supabase-client";
+import { useAuth } from "../../context/AuthContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { setSession } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const response = await fetch("http://localhost:3000/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: email,
-        password: password,
-      }),
-    });
+    try {
+      // Use Supabase client directly for authentication
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    const data = await response.json();
+      if (error) {
+        alert(error.message || "Login failed");
+        return;
+      }
 
-    if (!response.ok) {
-      alert(data.message || "Login failed");
-      return;
+      if (data.session) {
+        // Set session in AuthContext
+        setSession(data.session);
+        alert("Login successful!");
+        // Navigate to tasks page
+        navigate("/");
+      }
+    } catch (error) {
+      alert("Unable to connect to server");
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-
-    alert("Login successful!");
-    //console.log("User:", data.user);
-    //console.log("Session:", data.session);
-    //localStorage.setItem("access_token", data.session.access_token);
-    window.location.href = "../tasks-page/TasksPage.tsx";
-    
-
-    
-  } catch (error) {
-    alert("Unable to connect to server");
-    console.error(error);
-  }
-};
+  };
 
 
   return (
@@ -67,8 +67,12 @@ export default function LoginPage() {
             required
           />
 
-          <button type="submit" className="w-full py-3 bg-sky-600  text-white py-2 rounded-lg">
-            Login
+          <button 
+            type="submit" 
+            className="w-full py-3 bg-sky-600 text-white rounded-lg disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
