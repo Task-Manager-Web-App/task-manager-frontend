@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfilePage() {
-  const [firstName, setFirstName] = useState("Jane");
+
+  const { user } = useAuth();
+  console.log("ProfilePage user from context:", user);
+  
+  const navigate = useNavigate();
+
+  const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("Doe");
   const [role, setRole] = useState("User");
   const [email, setEmail] = useState("jane.doe@example.com");
@@ -30,15 +38,16 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadProfile = async () => {
       setError(null);
-      const userId = localStorage.getItem("user_id");
-      if (!userId) {
+      
+      if (!user) {
         setError("Please login first.");
+        navigate("/login");
         return;
       }
 
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:3000/profile/${userId}`);
+        const res = await fetch(`http://localhost:3000/profile/${user.id}`);
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
@@ -46,25 +55,20 @@ export default function ProfilePage() {
           return;
         }
 
-        // backend response: { first_name, last_name, role, email? }
+        // backend response: { first_name, last_name, role }
         const next = {
           firstName: data.first_name || "",
           lastName: data.last_name || "",
           role: data.role || "User",
-          email: data.email || "", // if backend doesn’t send email, will remain ""
+          email: user.email || "",
         };
 
         setFirstName(next.firstName);
         setLastName(next.lastName);
         setRole(next.role);
-        if (next.email) setEmail(next.email);
+        setEmail(next.email);
 
-        setInitial({
-          firstName: next.firstName,
-          lastName: next.lastName,
-          role: next.role,
-          email: next.email || email,
-        });
+        setInitial(next);
       } catch (e: any) {
         setError(e?.message || "Server error. Is backend running?");
       } finally {
@@ -73,22 +77,22 @@ export default function ProfilePage() {
     };
 
     loadProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, navigate]);
 
   // ✅ save changes
   const handleSave = async () => {
     setError(null);
-    const userId = localStorage.getItem("user_id");
-    if (!userId) {
+    
+    if (!user) {
       setError("Please login first.");
+      navigate("/login");
       return;
     }
 
     try {
       setSaving(true);
 
-      const res = await fetch(`http://localhost:3000/profile/${userId}`, {
+      const res = await fetch(`http://localhost:3000/profile/${user.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
