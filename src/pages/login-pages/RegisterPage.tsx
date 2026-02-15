@@ -1,49 +1,53 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../../../supabase-client";
+import { useAuth } from "../../context/AuthContext";
 
 export default function RegisterPage() {
-
   const navigate = useNavigate();
+  const { setSession } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const response = await fetch("http://localhost:3000/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: email,
-        password: password,
-        role: role,
-      }),
-    });
+    try {
+      // Use Supabase client directly for registration
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { role }
+        }
+      });
 
-    const data = await response.json();
+      if (error) {
+        alert(error.message || "Registration failed");
+        return;
+      }
 
-    if (!response.ok) {
-      alert(data.message || "Registration failed");
-      return;
+      alert("Registration successful! Please check your email for confirmation.");
+      
+      // If session is available (email confirmation disabled), set it
+      if (data.session) {
+        setSession(data.session);
+        navigate("/");
+      } else {
+        // Otherwise, redirect to login
+        navigate("/login");
+      }
+    } catch (error) {
+      alert("Cannot connect to server");
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-
-    alert("Registration successful!");
-    console.log(data);
-
-    // Redirect to login page after successful registration
-    navigate("/login");
-
-
-  } catch (error) {
-    alert("Cannot connect to server");
-    console.error(error);
-  }
-};
+  };
 
 
   return (
@@ -82,8 +86,12 @@ export default function RegisterPage() {
             <option value="admin">Admin</option>
           </select>
 
-          <button type="submit" className="w-full py-3 bg-sky-600  text-white rounded-lg">
-            Create Account
+          <button 
+            type="submit" 
+            className="w-full py-3 bg-sky-600 text-white rounded-lg disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 
