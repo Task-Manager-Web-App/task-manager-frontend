@@ -1,10 +1,9 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { supabase } from '../../supabase-client';
 
-export default function Navbar() {
+export default function Navbar( { session }: any ) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -18,7 +17,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     const confirm = window.confirm("Are you sure you want to logout?");
     if (confirm) {
-      await signOut();
+      await supabase.auth.signOut();
       navigate("/login");
     }
   };
@@ -35,15 +34,15 @@ export default function Navbar() {
         </Link>
         
         {/* User email display */}
-        {user && (
+        {session && (
           <div className="text-white text-sm">
-            👤 {user.email}
+            👤 {session.user.email}
           </div>
         )}
         
         {/* Navigation Buttons */}
         <div className="flex gap-6 items-center">
-          {!user ? (
+          {!session ? (
             <>
               <Link 
                 to="/login" 

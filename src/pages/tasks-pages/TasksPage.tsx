@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
 
 const API_URL = "http://localhost:3000";
 
@@ -10,8 +9,8 @@ type Task = {
   user_id: string;
 };
 
-const TasksPage = () => {
-  const { user } = useAuth();
+const TasksPage = ({ session }: any) => {
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string>("user");
@@ -21,35 +20,53 @@ const TasksPage = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
+  // Check Session User Details
+  console.log("Current session in TasksPage:", session?.user || "No session found");
+
+
+  // ======================== LOAD TASKS FUNCTION ========================
   const loadTasks = async () => {
     try {
+
       setLoading(true);
+
       // Fetch all tasks
       const res = await fetch(`${API_URL}/tasks`);
+      
       if (!res.ok) throw new Error("Failed to fetch tasks");
       const data = await res.json();
       setTasks(data);
       
-      // Get user role from profile
-      if (user) {
-        const profileRes = await fetch(`${API_URL}/profile/${user.id}`);
+      // ==== 🧠 GET USER ROLE FROM PROFILE ROUTE
+      if (session?.user) {
+
+        const profileRes = await fetch(`${API_URL}/profile/${session.user.id}`);
+
         const profile = await profileRes.json();
+        console.log("User profile data:", profile);
+        console.log("User role from profile:", profile.role);
+
         setUserRole(profile.role?.toLowerCase() || "user");
       }
-    } catch (error) {
+    } 
+    catch (error) {
       console.error(error);
       alert("Cannot load tasks. Is backend running on http://localhost:3000 ?");
-    } finally {
+    } 
+    finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
     loadTasks();
-  }, [user]);
+  }, [session]);
 
+
+  // ======================== DELETE TASK BUTTON ========================
   const handleDelete = async (id: string) => {
-    if (!user) {
+
+    if (!session?.user) {
       alert("Please login first");
       return;
     }
@@ -61,33 +78,39 @@ const TasksPage = () => {
       const res = await fetch(`${API_URL}/tasks/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.id, role: userRole }),
+        body: JSON.stringify({ user_id: session.user.id, role: userRole }),
       });
+
       if (!res.ok) throw new Error("Failed to delete task");
       loadTasks();
-    } catch (error) {
+    } 
+    
+    catch (error) {
       console.error(error);
       alert("Delete failed");
     }
+
   };
 
-  // start edit mode
-  const startEdit = (task: Task) => {
+
+
+  // ======================== EDIT START 
+  const handleEditStart = (task: Task) => {
     setEditingId(task.id);
     setEditTitle(task.title);
     setEditDescription(task.description ?? "");
   };
 
-  // cancel edit mode
-  const cancelEdit = () => {
+  // ======================== EDIT CANCEL
+  const handleEditCancel = () => {
     setEditingId(null);
     setEditTitle("");
     setEditDescription("");
   };
 
-  // save update
-  const saveEdit = async (id: string) => {
-    if (!user) {
+  // ======================== EDIT BUTTON HANDLE ========================
+  const handleEditSave = async (id: string) => {
+    if (!session?.user) {
       alert("Please login first");
       return;
     }
@@ -104,12 +127,12 @@ const TasksPage = () => {
         body: JSON.stringify({
           title: editTitle.trim(),
           description: editDescription.trim() ? editDescription.trim() : null,
-          user_id: user.id,
+          user_id: session.user.id,
           role: userRole,
         }),
       });
       if (!res.ok) throw new Error("Failed to update task");
-      cancelEdit();
+      handleEditCancel();
       loadTasks();
     } catch (error) {
       console.error(error);
@@ -117,10 +140,10 @@ const TasksPage = () => {
     }
   };
 
-  // Check if user can edit/delete task
+  // ======================== CHECK IF USER CAN EDIT/DELETE TASK ========================
   const canEdit = (task: Task) => {
-    if (!user) return false;
-    return task.user_id === user.id || userRole === "admin";
+    if (!session?.user) return false;
+    return task.user_id === session.user.id || userRole === "admin";
   };
 
   if (loading) {
@@ -190,13 +213,13 @@ const TasksPage = () => {
                       {isEditing ? (
                         <>
                           <button
-                            onClick={() => saveEdit(task.id)}
-                            className="border px-3 py-1 rounded-lg text-sm"
+                            onClick={() => handleEditSave(task.id)}
+                            className="border px-3 py-1 rounded-lg text-sm bg-green-300"
                           >
                             Save
                           </button>
                           <button
-                            onClick={cancelEdit}
+                            onClick={handleEditCancel}
                             className="border px-3 py-1 rounded-lg text-sm"
                           >
                             Cancel
@@ -205,7 +228,7 @@ const TasksPage = () => {
                       ) : (
                         <>
                           <button
-                            onClick={() => startEdit(task)}
+                            onClick={() => handleEditStart(task)}
                             className="border px-3 py-1 rounded-lg text-sm"
                           >
                             Update

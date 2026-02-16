@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-export default function ProfilePage() {
+export default function ProfilePage({ session }: any) {
 
-  const { user } = useAuth();
-  console.log("ProfilePage user from context:", user);
   
   const navigate = useNavigate();
 
@@ -39,7 +36,7 @@ export default function ProfilePage() {
     const loadProfile = async () => {
       setError(null);
       
-      if (!user) {
+      if (!session?.user) {
         setError("Please login first.");
         navigate("/login");
         return;
@@ -47,7 +44,7 @@ export default function ProfilePage() {
 
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:3000/profile/${user.id}`);
+        const res = await fetch(`http://localhost:3000/profile/${session.user.id}`);
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
@@ -60,7 +57,7 @@ export default function ProfilePage() {
           firstName: data.first_name || "",
           lastName: data.last_name || "",
           role: data.role || "User",
-          email: user.email || "",
+          email: session.user.email || "",
         };
 
         setFirstName(next.firstName);
@@ -77,13 +74,13 @@ export default function ProfilePage() {
     };
 
     loadProfile();
-  }, [user, navigate]);
+  }, [session, navigate]);
 
   // ✅ save changes
   const handleSave = async () => {
     setError(null);
     
-    if (!user) {
+    if (!session?.user) {
       setError("Please login first.");
       navigate("/login");
       return;
@@ -92,7 +89,7 @@ export default function ProfilePage() {
     try {
       setSaving(true);
 
-      const res = await fetch(`http://localhost:3000/profile/${user.id}`, {
+      const res = await fetch(`http://localhost:3000/profile/${session.user.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

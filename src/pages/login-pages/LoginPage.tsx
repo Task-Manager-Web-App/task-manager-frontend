@@ -1,22 +1,24 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../../supabase-client";
-import { useAuth } from "../../context/AuthContext";
 
 export default function LoginPage() {
+  
+  const navigate = useNavigate(); 
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { setSession } = useAuth();
 
+
+  // Login Button Handler
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Use Supabase client directly for authentication
-      const { data, error } = await supabase.auth.signInWithPassword({
+
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -26,17 +28,17 @@ export default function LoginPage() {
         return;
       }
 
-      if (data.session) {
-        // Set session in AuthContext
-        setSession(data.session);
-        alert("Login successful!");
-        // Navigate to tasks page
-        navigate("/");
-      }
-    } catch (error) {
+      alert("Login successful!");
+      navigate("/");
+      
+    } 
+    
+    catch (error) {
       alert("Unable to connect to server");
       console.error(error);
-    } finally {
+    } 
+    
+    finally {
       setLoading(false);
     }
   };

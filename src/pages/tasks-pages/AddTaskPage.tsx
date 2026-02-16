@@ -1,25 +1,32 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 
-export default function AddTaskPage() {
+export default function AddTaskPage({ session }: any) {
+
+  const navigate = useNavigate();
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const { user } = useAuth();
 
+  // Check Session User Details
+  console.log("Current session in AddTaskPage:", session?.user || "No session found");
+
+
+
+  // ======================== CANCEL BUTTON HANDLER ========================
   const handleCancel = () => {
     setTitle("");
     setDescription("");
     setError(null);
   };
 
+  // ======================== SAVE BUTTON HANDLER ========================
   const handleSave = async () => {
     setError(null);
 
-    if (!user) {
+    if (!session?.user) {
       setError("Please login first to add tasks.");
       return;
     }
@@ -38,7 +45,7 @@ export default function AddTaskPage() {
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
-          user_id: user.id, // Send user_id from session
+          user_id: session.user.id, // Send user_id from session
         }),
       });
 
@@ -54,12 +61,18 @@ export default function AddTaskPage() {
       setDescription("");
       // Navigate to tasks page after saving
       navigate("/");
-    } catch (e: any) {
+
+    }     
+    catch (e: any) {
       setError(e?.message || "Server error. Is backend running?");
-    } finally {
+    }     
+    finally {
       setLoading(false);
     }
   };
+
+
+  
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center pt-16">
@@ -99,7 +112,7 @@ export default function AddTaskPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Provide more details about this task. Include links, requirements, or sub-tasks..."
-              className="mt-3 w-full min-h-[180px] resize-none rounded-md border px-4 py-3 text-sm focus:outline-none focus:border-emerald-600"
+              className="mt-3 w-full min-h-45 resize-none rounded-md border px-4 py-3 text-sm focus:outline-none focus:border-emerald-600"
               disabled={loading}
             />
           </div>
