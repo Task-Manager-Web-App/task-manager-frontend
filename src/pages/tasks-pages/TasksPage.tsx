@@ -1,17 +1,22 @@
 import { useEffect, useState } from "react";
-import { getTasks, deleteTask, updateTask } from "../../api/tasksApi";
+import { useAuth } from "../../context/AuthContext";
+
+const API_URL = "http://localhost:3000";
 
 type Task = {
   id: string;
   title: string;
   description: string | null;
+  user_id: string;
 };
 
 const TasksPage = () => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string>("user");
 
-  // ✅ edit state
+  // edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -19,8 +24,18 @@ const TasksPage = () => {
   const loadTasks = async () => {
     try {
       setLoading(true);
-      const data = await getTasks();
+      // Fetch all tasks
+      const res = await fetch(`${API_URL}/tasks`);
+      if (!res.ok) throw new Error("Failed to fetch tasks");
+      const data = await res.json();
       setTasks(data);
+      
+      // Get user role from profile
+      if (user) {
+        const profileRes = await fetch(`${API_URL}/profile/${user.id}`);
+        const profile = await profileRes.json();
+        setUserRole(profile.role?.toLowerCase() || "user");
+      }
     } catch (error) {
       console.error(error);
       alert("Cannot load tasks. Is backend running on http://localhost:3000 ?");
@@ -31,14 +46,24 @@ const TasksPage = () => {
 
   useEffect(() => {
     loadTasks();
-  }, []);
+  }, [user]);
 
   const handleDelete = async (id: string) => {
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+
     const ok = confirm("Are you sure you want to delete this task?");
     if (!ok) return;
 
     try {
-      await deleteTask(id);
+      const res = await fetch(`${API_URL}/tasks/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user.id, role: userRole }),
+      });
+      if (!res.ok) throw new Error("Failed to delete task");
       loadTasks();
     } catch (error) {
       console.error(error);
@@ -46,39 +71,56 @@ const TasksPage = () => {
     }
   };
 
-  // ✅ start edit mode
+  // start edit mode
   const startEdit = (task: Task) => {
     setEditingId(task.id);
     setEditTitle(task.title);
     setEditDescription(task.description ?? "");
   };
 
-  // ✅ cancel edit mode
+  // cancel edit mode
   const cancelEdit = () => {
     setEditingId(null);
     setEditTitle("");
     setEditDescription("");
   };
 
-  // ✅ save update
+  // save update
   const saveEdit = async (id: string) => {
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+
     if (!editTitle.trim()) {
       alert("Title is required");
       return;
     }
 
     try {
-      await updateTask(id, {
-        title: editTitle.trim(),
-        description: editDescription.trim() ? editDescription.trim() : null,
+      const res = await fetch(`${API_URL}/tasks/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editTitle.trim(),
+          description: editDescription.trim() ? editDescription.trim() : null,
+          user_id: user.id,
+          role: userRole,
+        }),
       });
-
+      if (!res.ok) throw new Error("Failed to update task");
       cancelEdit();
       loadTasks();
     } catch (error) {
       console.error(error);
       alert("Update failed");
     }
+  };
+
+  // Check if user can edit/delete task
+  const canEdit = (task: Task) => {
+    if (!user) return false;
+    return task.user_id === user.id || userRole === "admin";
   };
 
   if (loading) {
@@ -143,35 +185,39 @@ const TasksPage = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  {isEditing ? (
+                  {canEdit(task) && (
                     <>
-                      <button
-                        onClick={() => saveEdit(task.id)}
-                        className="border px-3 py-1 rounded-lg text-sm"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="border px-3 py-1 rounded-lg text-sm"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => startEdit(task)}
-                        className="border px-3 py-1 rounded-lg text-sm"
-                      >
-                        Update
-                      </button>
-                      <button
-                        onClick={() => handleDelete(task.id)}
-                        className="border border-red-400 text-red-500 px-3 py-1 rounded-lg text-sm"
-                      >
-                        Delete
-                      </button>
+                      {isEditing ? (
+                        <>
+                          <button
+                            onClick={() => saveEdit(task.id)}
+                            className="border px-3 py-1 rounded-lg text-sm"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="border px-3 py-1 rounded-lg text-sm"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => startEdit(task)}
+                            className="border px-3 py-1 rounded-lg text-sm"
+                          >
+                            Update
+                          </button>
+                          <button
+                            onClick={() => handleDelete(task.id)}
+                            className="border border-red-400 text-red-500 px-3 py-1 rounded-lg text-sm"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
