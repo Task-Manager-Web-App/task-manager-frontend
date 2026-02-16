@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../../supabase-client";
-import { useAuth } from "../../context/AuthContext";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { setSession } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +16,7 @@ export default function RegisterPage() {
 
     try {
       // Use Supabase client directly for registration
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -32,15 +30,7 @@ export default function RegisterPage() {
       }
 
       alert("Registration successful! Please check your email for confirmation.");
-      
-      // If session is available (email confirmation disabled), set it
-      if (data.session) {
-        setSession(data.session);
-        navigate("/");
-      } else {
-        // Otherwise, redirect to login
-        navigate("/login");
-      }
+      navigate("/login");
     } catch (error) {
       alert("Cannot connect to server");
       console.error(error);
