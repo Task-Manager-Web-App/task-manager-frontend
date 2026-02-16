@@ -23,7 +23,11 @@ export default function ProfilePage({ session }: any) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ======================== CANCEL BUTTON HANDLER ========================
   const handleCancel = () => {
+
+    console.log("Canceling changes, reverting to last loaded state:", initial);
+
     setFirstName(initial.firstName);
     setLastName(initial.lastName);
     setRole(initial.role);
@@ -31,8 +35,9 @@ export default function ProfilePage({ session }: any) {
     setError(null);
   };
 
-  // ✅ load profile on page open
+  // ======================== LOAD PROFILE ON MOUNT ========================
   useEffect(() => {
+
     const loadProfile = async () => {
       setError(null);
       
@@ -46,26 +51,27 @@ export default function ProfilePage({ session }: any) {
         setLoading(true);
         const res = await fetch(`http://localhost:3000/profile/${session.user.id}`);
         const data = await res.json().catch(() => ({}));
+        console.log("Profile data fetched from backend:", data);
+        // Output example: { first_name: "Ryan", last_name: "Wick", role: "User" }
 
         if (!res.ok) {
           setError(data?.message || "Failed to load profile.");
           return;
         }
 
-        // backend response: { first_name, last_name, role }
-        const next = {
+        // Update state with fetched profile data
+        setFirstName(data.first_name || "");
+        setLastName(data.last_name || "");
+        setRole(data.role || "User");
+        setEmail(session.user.email || "");
+
+        setInitial({
           firstName: data.first_name || "",
           lastName: data.last_name || "",
           role: data.role || "User",
           email: session.user.email || "",
-        };
-
-        setFirstName(next.firstName);
-        setLastName(next.lastName);
-        setRole(next.role);
-        setEmail(next.email);
-
-        setInitial(next);
+        });
+        
       } catch (e: any) {
         setError(e?.message || "Server error. Is backend running?");
       } finally {
@@ -76,7 +82,8 @@ export default function ProfilePage({ session }: any) {
     loadProfile();
   }, [session, navigate]);
 
-  // ✅ save changes
+
+  // ======================== SAVE BUTTON HANDLER ========================
   const handleSave = async () => {
     setError(null);
     
@@ -191,7 +198,7 @@ export default function ProfilePage({ session }: any) {
             <button
               type="button"
               onClick={handleCancel}
-              className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-60"
+              className="text-sm hover:text-gray-700 disabled:opacity-60 bg-red-400 text-white px-5 py-2 rounded-md"
               disabled={loading || saving}
             >
               Cancel
