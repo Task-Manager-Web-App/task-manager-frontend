@@ -11,6 +11,10 @@ export default function ProfilePage({ session }: any) {
   const [role, setRole] = useState("User");
   const [email, setEmail] = useState("jane.doe@example.com");
 
+  // Check Session User Details
+  console.log("Current session in ProfilePage:", session?.user || "No session found");
+
+
   // keep a copy so Cancel can restore the last loaded state
   const [initial, setInitial] = useState({
     firstName: "Jane",
